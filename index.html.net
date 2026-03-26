@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Key System</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(135deg,#0f172a,#020617);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: rgba(30,41,59,0.8);
+  padding: 20px;
+  border-radius: 20px;
+  width: 320px;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.box {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  margin: 5px;
+  background: #1e293b;
+  border-radius: 10px;
+  line-height: 80px;
+  cursor: pointer;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #22c55e;
+  color: white;
+  font-size: 16px;
+}
+
+.copyBtn {
+  background: #3b82f6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Key System</h2>
+
+<div>
+  <div class="box" onclick="startTimer(1,30)">1</div>
+  <div class="box" onclick="startTimer(2,40)">2</div>
+  <div class="box" onclick="startTimer(3,50)">3</div>
+</div>
+
+<p id="status"></p>
+
+<button id="getKeyBtn" style="display:none;" onclick="getKey()">Get Key</button>
+<button id="copyBtn" class="copyBtn" style="display:none;" onclick="copyKey()">Copy Key</button>
+
+<div id="keyDisplay"></div>
+<div id="countdown"></div>
+</div>
+
+<script>
+
+let done = [false,false,false];
+let currentKey = "";
+
+// ===== RESET =====
+function resetTask(){
+  done = [false,false,false];
+
+  let boxes = document.getElementsByClassName("box");
+  for(let i=0;i<boxes.length;i++){
+    boxes[i].innerText = i+1;
+  }
+
+  getKeyBtn.style.display="none";
+  copyBtn.style.display="none";
+  status.innerText="";
+  keyDisplay.innerText="";
+}
+
+// ===== TIMER =====
+function startTimer(i,t){
+  let box = document.getElementsByClassName("box")[i-1];
+  if(done[i-1]) return;
+
+  let iv = setInterval(()=>{
+    t--;
+    box.innerText = t+"s";
+
+    if(t<=0){
+      clearInterval(iv);
+      box.innerText="Done";
+      done[i-1]=true;
+
+      if(done.every(v=>v)){
+        getKeyBtn.style.display="block";
+        status.innerText="Completed";
+      }
+    }
+  },1000);
+}
+
+// ===== TẠO KEY ĐÚNG FORMAT =====
+function genKey(){
+  let num = Math.floor(1000000 + Math.random()*9000000);
+  return "KidHubJPW" + num;
+}
+
+// ===== LẤY KEY =====
+function getKey(){
+  let now = Date.now();
+  let data = JSON.parse(localStorage.getItem("keyData")||"null");
+
+  if(data && now < data.expire){
+    showKey(data.key, data.expire);
+    return;
+  }
+
+  let key = genKey();
+  let expire = now + 86400000;
+
+  localStorage.setItem("keyData", JSON.stringify({
+    key: key,
+    expire: expire
+  }));
+
+  showKey(key, expire);
+}
+
+// ===== HIỂN THỊ =====
+function showKey(key, expire){
+  currentKey = key;
+  keyDisplay.innerText = "Key: " + key;
+  copyBtn.style.display="block";
+  startCountdown(expire);
+}
+
+// ===== COPY =====
+function copyKey(){
+  navigator.clipboard.writeText(currentKey);
+  copyBtn.innerText = "Copied";
+  setTimeout(()=> copyBtn.innerText="Copy Key",1000);
+}
+
+// ===== COUNTDOWN =====
+let cd;
+
+function startCountdown(expire){
+  clearInterval(cd);
+
+  cd = setInterval(()=>{
+    let diff = expire - Date.now();
+
+    if(diff <= 0){
+      countdown.innerText = "Expired";
+      localStorage.removeItem("keyData");
+      resetTask();
+      clearInterval(cd);
+      return;
+    }
+
+    let h = Math.floor(diff/3600000);
+    let m = Math.floor((diff%3600000)/60000);
+    let s = Math.floor((diff%60000)/1000);
+
+    countdown.innerText = `${h}h ${m}m ${s}s`;
+  },1000);
+}
+
+// ===== LOAD =====
+window.onload = ()=>{
+  let data = JSON.parse(localStorage.getItem("keyData")||"null");
+
+  if(data && Date.now() < data.expire){
+    showKey(data.key, data.expire);
+    done=[true,true,true];
+    getKeyBtn.style.display="block";
+    status.innerText="Have key";
+  }else{
+    resetTask();
+  }
+}
+
+</script>
+
+</body>
+    </html>
