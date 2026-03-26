@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Key System</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: linear-gradient(135deg,#0f172a,#020617);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: rgba(30,41,59,0.8);
+  padding: 20px;
+  border-radius: 20px;
+  width: 320px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.box {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  margin: 5px;
+  background: #1e293b;
+  border-radius: 10px;
+  line-height: 80px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.box:hover {
+  background: #334155;
+}
+
+button {
+  margin-top: 15px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #22c55e;
+  color: white;
+  font-size: 16px;
+}
+
+#keyDisplay {
+  margin-top: 10px;
+  word-break: break-all;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Key System</h2>
+
+<div>
+  <div class="box" onclick="startTimer(1,30)">1</div>
+  <div class="box" onclick="startTimer(2,40)">2</div>
+  <div class="box" onclick="startTimer(3,50)">3</div>
+</div>
+
+<p id="status"></p>
+<button id="getKey" style="display:none;" onclick="getKey()">Get Key</button>
+
+<div id="keyDisplay"></div>
+<div id="countdown"></div>
+</div>
+
+<script>
+let done = [false,false,false];
+
+function resetTask(){
+  done = [false,false,false];
+  let boxes = document.getElementsByClassName("box");
+
+  for(let i=0;i<boxes.length;i++){
+    boxes[i].innerText = i+1;
+  }
+
+  getKeyBtn.style.display="none";
+  status.innerText="";
+  keyDisplay.innerText="";
+  countdown.innerText="";
+}
+
+function startTimer(i,t){
+  let box = document.getElementsByClassName("box")[i-1];
+  if(done[i-1]) return;
+
+  let iv = setInterval(()=>{
+    t--;
+    box.innerText = t+"s";
+    if(t<=0){
+      clearInterval(iv);
+      box.innerText="Done";
+      done[i-1]=true;
+      if(done.every(v=>v)){
+        getKeyBtn.style.display="block";
+        status.innerText="Completed";
+      }
+    }
+  },1000);
+}
+
+function genKey(){
+  return "KidHub"+Math.floor(10000+Math.random()*90000)+"JPWEG";
+}
+
+function getKey(){
+  let now=Date.now();
+  let data=JSON.parse(localStorage.getItem("keyData")||"null");
+
+  if(data && now<data.expire){
+    showKey(data.key,data.expire);
+    return;
+  }
+
+  let key=genKey();
+  let exp=now+86400000;
+
+  localStorage.setItem("keyData",JSON.stringify({key:key,expire:exp}));
+  showKey(key,exp);
+}
+
+function showKey(k,e){
+  keyDisplay.innerText="Key: "+k;
+  startCD(e);
+}
+
+let cd;
+function startCD(e){
+  clearInterval(cd);
+  cd=setInterval(()=>{
+    let d=e-Date.now();
+    if(d<=0){
+      countdown.innerText="Expired";
+      localStorage.removeItem("keyData");
+      resetTask();
+      clearInterval(cd);
+      return;
+    }
+    let h=Math.floor(d/3600000);
+    let m=Math.floor((d%3600000)/60000);
+    let s=Math.floor((d%60000)/1000);
+    countdown.innerText=`${h}h ${m}m ${s}s`;
+  },1000);
+}
+
+window.onload=()=>{
+  let data=JSON.parse(localStorage.getItem("keyData")||"null");
+  if(data && Date.now()<data.expire){
+    showKey(data.key,data.expire);
+    done=[true,true,true];
+    getKeyBtn.style.display="block";
+    status.innerText="Have key";
+  }else{
+    resetTask();
+  }
+}
+</script>
+
+</body>
+  </html>
